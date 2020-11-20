@@ -64,47 +64,39 @@ export class FreeThrowTrainer extends Scene {
     }
 
     make_control_panel() {
+        this.key_triggered_button("Shoot", ["Control", "S"], () => this.shotToggleOn() );
         this.live_string(box => {
-            box.textContent = "Your Score: " + this.totalScore;
+            box.textContent = "Your Score: " + this.totalScore + " points";
         }, );
         this.new_line();
-        this.key_triggered_button("Increase Vertical Angle", ["Control", "+"], () => this.verticalAngleIncrease() );
+        this.key_triggered_button("Increase Vertical Angle", ["Control", "+"], () => this.verticalAngleIncrease() );        
         this.live_string(box => {
-            box.textContent = "Vertical Angle: " + this.verticalAngle;
+            box.textContent = "Vertical Angle: " + this.verticalAngle + " degrees  ";
         }, );
-        this.new_line();
         this.key_triggered_button("Decrease Vertical Angle", ["Control", "-"], () => this.verticalAngleDecrease() );
-        this.new_line();
-        this.key_triggered_button("Increase Horizontal Angle", ["Control", "1"], () => this.horizontalAngleIncrease() );
+        this.key_triggered_button("Increase Horizontal Angle", ["Control", "1"], () => this.horizontalAngleIncrease() );        
         this.live_string(box => {
-            box.textContent = "Horizontal Angle: " + this.horizontalAngle;
+            box.textContent = "Horizontal Angle: " + this.horizontalAngle + " degrees  ";
         }, );
-        this.new_line();
-        this.key_triggered_button("Decrease Horizontal Angle", ["Control", "2"], () => this.horizontalAngleDecrease() );
-        this.new_line();
+        this.key_triggered_button("Decrease Horizontal Angle", ["Control", "2"], () => this.horizontalAngleDecrease() );       
         this.key_triggered_button("Increase Initial Velocity", ["Control", "3"], () => this.initialVelocityIncrease() );
-
         this.live_string(box => {
-            box.textContent = "Initial Velocity: " + this.initialVelocity.toFixed(1);
+            box.textContent = "Initial Velocity: " + this.initialVelocity.toFixed(1) + " m/s  ";
         }, );
-        this.new_line();
         this.key_triggered_button("Decrease Initial Velocity", ["Control", "4"], () => this.initialVelocityDecrease() );
-        this.new_line();
-                
-        this.key_triggered_button("Increase Distance to Hoop", ["Control", "5"], () => this.distanceToHoopIncrease() );
+        this.key_triggered_button("Increase Distance to Hoop", ["Control", "5"], () => this.distanceToHoopIncrease() );        
         this.live_string(box => {
-            box.textContent = "Distance to Hoop: " + this.distanceToHoop.toFixed(1);
+            box.textContent = "Distance: " + this.distanceToHoop.toFixed(1) + " meter(s)  ";
         }, );
-        this.new_line();
-        this.key_triggered_button("Decrease Distance to Hoop", ["Control", "6"], () => this.distanceToHoopDecrease() );
-        this.new_line();
+        this.key_triggered_button("Decrease Distance to Hoop", ["Control", "6"], () => this.distanceToHoopDecrease() );       
+        this.key_triggered_button("Increase Acceleration Due to Gravity", ["Control", "7"], () => this.accDueToGravIncrease() );    
+        this.live_string(box => {
+            box.textContent = "Gravity: " + this.accDueToGrav.toFixed(1) + " m/s^2  ";
+        }, );
+        this.key_triggered_button("Decrease Acceleration Due to Gravity", ["Control", "8"], () => this.accDueToGravDecrease() );      
         this.key_triggered_button("Attach camera to Basketball", ["Control", "B"], () => this.attached = () => this.basketBall );
-        this.new_line();
         this.key_triggered_button("Hoop View", ["Control", "H"], () => this.attached = () => this.hoopView );
-        this.new_line();
         this.key_triggered_button("Return to default view", ["Control", "0"], () =>     this.attached = () => this.defaultCamera );
-        this.new_line();
-
     }
 
     defaultCamera = Mat4.inverse(Mat4.translation(0, -3, 10).times(Mat4.look_at(vec3(0, 4, 10), vec3(0, 0, 0), vec3(0, 1, 0))));
@@ -113,6 +105,34 @@ export class FreeThrowTrainer extends Scene {
     initialVelocity = 10.0;
     distanceToHoop = 15.0;
     totalScore = 0;
+    accDueToGrav = 9.8;
+    shotSwitch = false;
+    takeShot = false;   
+
+    takeShotOn(){
+        this.takeShot = true;
+    }
+
+    takeShotOff(){
+        this.takeShot = false;
+    }
+
+    shotToggleOn(){
+        this.shotSwitch = true;
+    }
+
+    shotToggleOff(){
+        this.shotSwitch = false;
+    }
+
+
+    accDueToGravIncrease(){
+        this.accDueToGrav = this.accDueToGrav + 0.1;
+    }
+
+    accDueToGravDecrease(){
+        this.accDueToGrav = this.accDueToGrav - 0.1;
+    } 
 
     increaseTotalScore(){
         this.totalScore++;
@@ -163,43 +183,58 @@ export class FreeThrowTrainer extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-        const t = (program_state.animation_time / 1000) % 5, dt = program_state.animation_delta_time / 1000;
+
+
+        const t = (program_state.animation_time / 1000) % 5;
+        //let dt = program_state.animation_delta_time / 1000;
         const yellow = hex_color("#fac91a");
-        let accDueToGrav = 9.8;
         let velocityZ = (this.initialVelocity*Math.cos(this.verticalAngle*Math.PI*(1/180)))*Math.cos(this.horizontalAngle*Math.PI*(1/180));
         let velocityY = this.initialVelocity*Math.sin(this.verticalAngle*Math.PI*(1/180));
         let velocityX = (this.initialVelocity*Math.cos(this.verticalAngle*Math.PI*(1/180)))*Math.sin(this.horizontalAngle*Math.PI*(1/180));
-                const light_position = vec4(0, 0, 10, 1);
+        const light_position = vec4(0, 0, 10, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 100)];
         let model_transform  = Mat4.identity();
         
         //draw basketball
-        let model_transform_basketBall = model_transform.times(Mat4.translation(t*velocityX, Math.max(-.7787, (t*velocityY)-0.5*accDueToGrav*t*t), (-1)*t*velocityZ)
-            .times(Mat4.scale(0.1213, 0.1213, 0.1213)));
+        let model_transform_basketBall = model_transform.times(Mat4.translation(t*velocityX, Math.max(-0.71, (t*velocityY)-0.5*this.accDueToGrav*t*t), (-1)*t*velocityZ)
+            .times(Mat4.scale(0.24, 0.24, 0.24)));
+
         this.basketBall = model_transform_basketBall;
-        this.shapes.sphere5.draw(context, program_state, model_transform_basketBall, this.materials.basketBall);
-   
+        model_transform_basketBall = model_transform_basketBall.times(Mat4.rotation(t, 1, 0, 0));
+        
+        if(this.shotSwitch && t < 0.1){
+            this.takeShotOn();
+        }
+
+        if(this.takeShot){
+           this.shapes.sphere5.draw(context, program_state, model_transform_basketBall, this.materials.basketBall);
+        }
+
+        if (t>4.9 && this.takeShot){
+            this.shotToggleOff();
+            this.takeShotOff();
+        }
         // drawing court_floor
         let floor_transform = model_transform.times(Mat4.translation(0,-1.0, -40))
             .times(Mat4.scale(15,.05,45));
         this.shapes.cube.draw(context, program_state, floor_transform , this.materials.backboard_holder.override({color:hex_color("#dda01e")}));
         
         // drawing the base
-        let base_transform = model_transform.times(Mat4.translation(0, -0.8, -1*(this.distanceToHoop+1.46))
+        let base_transform = model_transform.times(Mat4.translation(0, -0.8, -1*(this.distanceToHoop+1.55))
             .times(Mat4.scale(0.5,0.2,0.5)));
         this.shapes.cube.draw(context, program_state, base_transform , this.materials.backboard.override({color:color(0.5,0.5,0.5,1)}));
 
         // drawing the post
-        let postPieceOne_transform = model_transform.times(Mat4.translation(0, 0, -1*(this.distanceToHoop+1.02)))
+        let postPieceOne_transform = model_transform.times(Mat4.translation(0, 0, -1*(this.distanceToHoop+1.11)))
             .times(Mat4.scale(0.1,1.0,0.05));
         this.shapes.cube.draw(context, program_state, postPieceOne_transform , this.materials.backboard);
-        let postPieceTwo_transform = model_transform.times(Mat4.translation(0, 1.525,-1*(this.distanceToHoop+0.7069)))
+        let postPieceTwo_transform = model_transform.times(Mat4.translation(0, 1.525,-1*(this.distanceToHoop+0.7969)))
             .times(Mat4.rotation(Math.PI/6,1,0,0))
             .times(Mat4.scale(0.1, 0.6062, 0.05));
         this.shapes.cube.draw(context, program_state, postPieceTwo_transform , this.materials.backboard);
 
         // drawing backboard
-        let backboard_transform = model_transform.times(Mat4.translation(0, 2.355, -1*(this.distanceToHoop+0.4038))
+        let backboard_transform = model_transform.times(Mat4.translation(0, 2.355, -1*(this.distanceToHoop+0.4938))
             .times(Mat4.scale(0.915, 0.61, 0.1)));
         this.shapes.cube.draw(context, program_state, backboard_transform , this.materials.backboard_holder);
         backboard_transform = backboard_transform.times(Mat4.translation(0,-0.4,0)).times(Mat4.scale(1.1,0.75,0.5));
@@ -209,7 +244,7 @@ export class FreeThrowTrainer extends Scene {
         let hoop_transform = model_transform;
         hoop_transform = hoop_transform.times(Mat4.translation(0, 2.05, -1*this.distanceToHoop))
             .times(Mat4.rotation(Math.PI,0,1,-1))
-            .times(Mat4.scale(0.43,0.43,0.1));
+            .times(Mat4.scale(0.55,0.55,0.1));
         this.shapes.torus.draw(context, program_state, hoop_transform , this.materials.hoop);
         this.hoopView = model_transform.times(Mat4.translation(0, .5, -1*(this.distanceToHoop+1.1738)).
             times(Mat4.rotation(Math.PI,0,1/2,1)));
